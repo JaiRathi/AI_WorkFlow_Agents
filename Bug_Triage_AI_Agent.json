@@ -1395,7 +1395,7 @@
                 "title_case": false,
                 "track_in_telemetry": false,
                 "type": "str",
-                "value": "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"
+                "value": ""
               },
               "base_url": {
                 "_input_type": "MessageTextInput",
