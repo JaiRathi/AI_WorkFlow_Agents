@@ -35,7 +35,7 @@ ChatInput ──> Prompt Template (JQL) ──> APIRequest (GET Jira) ──> Ji
 | Node | Type | Details |
 |------|------|---------|
 | **Chat Input** | Built-in | Receives issue keys from user |
-| **Prompt Template** | Built-in | JQL URL builder: `https://amithhathwar.atlassian.net/rest/api/3/search/jql?jql=key%20in%20({issue_keys})` |
+| **Prompt Template** | Built-in | JQL URL builder: `https://jaivir.atlassian.net/rest/api/3/search/jql?jql=key%20in%20({issue_keys})` |
 | **API Request** | Built-in | GET request to Atlassian Jira REST API |
 | **Jira Search Parser** | Custom | Parses raw Jira JSON response into structured text |
 | **Prompt Template** | Built-in | **Bug Triage Prompt** (624 chars) — instructs LLM to analyze Jira issue and produce: Severity (Blocker/Critical/Major/Minor/Trivial), Priority (P0–P4), Impact Areas, Root Cause Analysis, and Justification |
@@ -51,7 +51,7 @@ The prompt asks the LLM to act as a senior bug triage engineer and analyze a Jir
 4. **ROOT CAUSE ANALYSIS** — best hypothesis
 5. **JUSTIFICATION** — reasoning for severity/priority
 
-> ⚠️ **Note:** Uses `amithhathwar.atlassian.net` — different Jira instance than other agents.
+> ⚠️ **Note:** Uses `jaivir.atlassian.net` — different Jira instance than other agents.
 
 ---
 
@@ -294,7 +294,7 @@ The prompt instructs the LLM to act as a **Principal QA Automation Architect** t
 | # | Issue | Recommendation |
 |---|-------|---------------|
 | 1 | **Hardcoded API keys** in MistralAI flows | Move API keys to environment variables or LangFlow secrets management |
-| 2 | **Bug Triage Agent** uses `amithhathwar.atlassian.net` while others use `jaivir.atlassian.net` | Standardize Jira instance or document the difference |
+| 2 | **Bug Triage Agent** uses `jaivir.atlassian.net` while others use `jaivir.atlassian.net` | Standardize Jira instance or document the difference |
 | 3 | **Flaky Test Generator** has a generic system message ("You are a helpful assistant") | Strengthen the system message with domain-specific role and guardrails |
 | 4 | **Multi-File Writer** writes to `/app/langflow/exports/` (container path) | Document required Docker volume mount or switch to a configurable output path |
 | 5 | **No error handling** for missing/invalid Jira keys | Add input validation or retry logic |
