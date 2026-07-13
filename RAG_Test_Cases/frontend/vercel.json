@@ -1,0 +1,13 @@
+{
+  "buildCommand": "",
+  "functions": {
+    "api/index.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {"source": "/api/(.*)", "destination": "/api/index"},
+    {"source": "/(.*)", "destination": "/index.html"}
+  ]
+}

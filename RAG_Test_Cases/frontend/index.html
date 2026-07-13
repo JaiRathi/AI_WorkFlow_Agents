@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>RAG Test Cases Explorer</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#06061a;--card:#0e0e2e;--border:#1a1a4a;--accent:#6366f1;--accent2:#06b6d4;--text:#e2e8f0;--muted:#94a3b8;--green:#22c55e;--red:#ef4444;--amber:#f59e0b;--pink:#ec4899;--radius:12px}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{max-width:1100px;margin:0 auto;padding:24px}
+.header{display:flex;align-items:center;gap:16px;margin-bottom:28px;padding:20px 24px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.header h1{font-size:22px}.header h1 span{background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.badge-green{background:#064e3b;color:var(--green)}.badge-red{background:#450a0a;color:var(--red)}
+.badge-purple{background:#1e1b4b;color:#a78bfa}.badge-cyan{background:#164e63;color:var(--accent2)}.badge-pink{background:#4a144a;color:var(--pink)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:18px;transition:border-color .2s}
+.card:hover{border-color:rgba(99,102,241,.3)}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.card-header-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.ci-purple{background:#1e1b4b;color:#a78bfa}.ci-cyan{background:#164e63;color:var(--accent2)}
+.ci-green{background:#064e3b;color:var(--green)}.ci-amber{background:#451a03;color:var(--amber)}
+.card-title{font-weight:600;font-size:14px}.card-sub{font-size:11px;color:var(--muted)}
+.section-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:600}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+input,textarea{width:100%;padding:11px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;transition:border-color .2s}
+input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+textarea{min-height:80px;resize:vertical}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.form-group{margin-bottom:16px}
+.btn{padding:10px 22px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(99,102,241,.4)}.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-sm{padding:7px 16px;font-size:12px}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--accent)}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.settings-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.settings-key{font-size:12px;font-weight:600;width:130px;color:var(--accent2)}.settings-val{font-size:12px;color:var(--muted)}
+.answer-card{background:linear-gradient(135deg,#1e1b4b,#0e0e2e);border:1px solid var(--accent);border-radius:var(--radius);padding:24px;margin-top:16px}
+.answer-body{font-size:14px;line-height:1.8;white-space:pre-wrap}
+.toast{position:fixed;bottom:24px;right:24px;padding:14px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:100;animation:su .3s ease;max-width:420px}.toast-success{background:#064e3b;color:var(--green);border:1px solid var(--green)}.toast-error{background:#450a0a;color:var(--red);border:1px solid var(--red)}@keyframes su{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.svc-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}.dg{background:var(--green)}.dr{background:var(--red)}
+.flow-diagram{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px 20px;margin-bottom:18px;overflow-x:auto}
+.flow-row{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0;flex-wrap:nowrap;min-width:720px}
+.flow-node{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:600;white-space:nowrap;position:relative}
+.fn-icon{font-size:16px}
+.fn-g{background:linear-gradient(135deg,#064e3b,#065f46);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.fn-p{background:linear-gradient(135deg,#1e1b4b,#2e1065);color:#c4b5fd;border:1px solid rgba(139,92,246,.3)}
+.fn-c{background:linear-gradient(135deg,#164e63,#155e75);color:var(--accent2);border:1px solid rgba(6,182,212,.3)}
+.fn-a{background:linear-gradient(135deg,#451a03,#78350f);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
+.flow-arrow{color:var(--muted);font-size:18px;font-weight:300}
+.flow-down{display:flex;justify-content:center;margin:6px 0}
+.flow-down-arrow{color:var(--muted);font-size:22px}
+.flow-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);white-space:nowrap}
+.chunk-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;font-size:12px;line-height:1.6}
+.chunk-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.chunk-rank{color:var(--accent);font-weight:700;font-size:13px}
+.chunk-relevance{font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px}
+.cr-high{color:var(--green);background:#064e3b}.cr-med{color:var(--amber);background:#451a03}.cr-low{color:var(--muted);background:var(--border)}
+.chunk-id{font-size:10px;color:var(--muted);margin-left:auto}
+.chunk-text{color:var(--text)}
+.tab-bar{display:flex;gap:4px;margin-bottom:20px}
+.tab{padding:10px 20px;border-radius:10px 10px 0 0;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;font-weight:500;transition:all .2s}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--card);color:var(--text);border-color:var(--border);border-bottom-color:var(--card);margin-bottom:-1px}.tab.active::after{content:'';display:block;width:20px;height:2px;background:var(--accent);border-radius:2px;margin:6px auto -4px}
+.pulse{animation:pulse 2s infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-value{font-size:24px;font-weight:700;margin-bottom:4px}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .4s ease}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:48px;margin-bottom:16px}
+@media(max-width:768px){.grid-2,.stats-grid{grid-template-columns:1fr}.tab{padding:8px 14px;font-size:12px}}
+</style>
+</head>
+<body>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<div id="root"></div>
+<script>
+const LS='ragtc_';
+const ld=(k,d)=>{try{const v=localStorage.getItem(LS+k);return v?JSON.parse(v):d}catch{return d}};
+const sv=(k,v)=>{try{localStorage.setItem(LS+k,JSON.stringify(v))}catch{}};
+
+function FlowDiagram({status}){
+  const stages=[
+    {icon:'📄',label:'Upload',cls:'fn-g',active:true},
+    {icon:'🔪',label:'Chunk',cls:'fn-p',active:status==='done'},
+    {icon:'🧠',label:'Embed',cls:'fn-p',active:status==='done'},
+    {icon:'💾',label:'Store',cls:'fn-c',active:status==='done'},
+  ];
+  const qStages=[
+    {icon:'❓',label:'Query',cls:'fn-p',active:true},
+    {icon:'🔍',label:'Retrieve',cls:'fn-c',active:status==='done'},
+    {icon:'🤖',label:'LLM Gen',cls:'fn-a',active:status==='done'},
+    {icon:'📊',label:'Results',cls:'fn-g',active:status==='done'},
+  ];
+
+  return React.createElement('div',{className:'flow-diagram'},
+    React.createElement('div',{className:'section-label',style:{textAlign:'center',marginBottom:18}},'🔬 Pipeline Architecture'),
+    React.createElement('div',{className:'flow-row'},
+      stages.map((s,i)=>React.createElement(React.Fragment,{key:i},
+        React.createElement('div',{className:'flow-node '+s.cls,style:{position:'relative',opacity:s.active?1:.35}},
+          React.createElement('span',{className:'fn-icon'},s.icon),
+          React.createElement('span',null,s.label)
+        ),
+        i<stages.length-1&&React.createElement('span',{className:'flow-arrow'},'→')
+      ))
+    ),
+    React.createElement('div',{className:'flow-down'},React.createElement('span',{className:'flow-down-arrow'},'↓')),
+    React.createElement('div',{className:'flow-row'},
+      qStages.map((s,i)=>React.createElement(React.Fragment,{key:i},
+        React.createElement('div',{className:'flow-node '+s.cls,style:{opacity:s.active?1:.35}},
+          React.createElement('span',{className:'fn-icon'},s.icon),
+          React.createElement('span',null,s.label)
+        ),
+        i<qStages.length-1&&React.createElement('span',{className:'flow-arrow'},'→')
+      ))
+    ),
+    React.createElement('div',{style:{textAlign:'center',marginTop:16,fontSize:10,color:'var(--muted)'}},
+      status==='done'?'🟢 Pipeline active — document loaded and ready for queries':
+      status==='running'?React.createElement(React.Fragment,null,React.createElement('span',{className:'spinner',style:{width:10,height:10,marginRight:6}}),'Ingesting...'):
+      '⚪ Upload a file to activate the pipeline'
+    )
+  );
+}
+
+function App(){
+  const [settings,setSettings]=React.useState(()=>ld('settings',{langflowUrl:'',langflowToken:'',groqApiKey:'',topK:10}));
+  const [f,setF]=React.useState(null);const [fn,setFn]=React.useState('');
+  const [q,setQ]=React.useState('');const [loading,setLoading]=React.useState(false);
+  const [results,setResults]=React.useState(null);const [toast,setToast]=React.useState(null);
+  const [testingConn,setTestingConn]=React.useState(false);
+  const [pipelineStatus,setPipelineStatus]=React.useState('idle');
+  const fileRef=React.useRef(null);
+
+  const tm=(msg,type='success')=>{setToast({msg,type});setTimeout(()=>setToast(null),4000)};
+  React.useEffect(()=>{sv('settings',settings)},[settings]);
+
+  const cc=async()=>{
+    if(!settings.langflowUrl)return tm('Enter Langflow URL first','error');
+    setTestingConn(true);
+    const base=settings.langflowUrl.replace(/\/+$/,'');
+    const headers=settings.langflowToken?{'x-api-key':settings.langflowToken}:{};
+    const eps=['/health','/api/health','/api/v1/health','/api/v1/version'];
+    let ok=false,le='';
+    for(const e of eps){
+      try{const r=await fetch(base+e,{headers});if(r.ok){ok=true;break};le='HTTP '+r.status+' on '+e}catch(err){le=e+': '+err.message}
+    }
+    tm(ok?'✅ Langflow connected successfully!':'❌ Connection failed. Tried: '+eps.join(', ')+'. Last: '+le,ok?'success':'error');
+    setTestingConn(false);
+  };
+
+  const hu=async()=>{
+    if(!f)return tm('Select a file','error');
+    setLoading(true);setPipelineStatus('running');
+    try{
+      const fd=new FormData();fd.append('file',f);
+      const r=await fetch('/api/ingest',{method:'POST',body:fd,headers:settings.groqApiKey?{'X-Groq-Key':settings.groqApiKey}:{}});
+      let d;try{d=await r.json()}catch{throw new Error('Server returned non-JSON. Check Vercel Deployment Protection settings.')}
+      if(!r.ok)throw new Error(d.detail||'Ingest failed');
+      tm(d.message||'✅ Ingested '+fn);setPipelineStatus('done');
+    }catch(e){tm(e.message,'error');setPipelineStatus('idle')}
+    setLoading(false);
+  };
+
+  const hq=async()=>{
+    if(!q.trim())return;
+    setLoading(true);
+    try{
+      const r=await fetch('/api/query',{method:'POST',headers:{'Content-Type':'application/json','X-Groq-Key':settings.groqApiKey},body:JSON.stringify({query:q.trim(),top_k:settings.topK||10})});
+      let d;try{d=await r.json()}catch{throw new Error('Server returned non-JSON. Check Vercel Deployment Protection.')}
+      if(!r.ok)throw new Error(d.detail||'Query failed');
+      setResults(d);
+    }catch(e){tm(e.message,'error')}
+    setLoading(false);
+  };
+
+  return React.createElement('div',{className:'app'},
+    React.createElement('header',{className:'header'},
+      React.createElement('div',{style:{width:40,height:40,borderRadius:10,background:'linear-gradient(135deg,#1e1b4b,#164e63)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}},'🧪'),
+      React.createElement('div',{style:{flex:1}},
+        React.createElement('h1',null,'RAG ',React.createElement('span',null,'Test Cases Explorer')),
+        React.createElement('div',{style:{fontSize:11,color:'var(--muted)',marginTop:4}},'Semantic search for test case documents · AI-powered retrieval & generation')
+      ),
+      React.createElement('div',{style:{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'flex-end'}},
+        React.createElement('span',{className:'badge badge-cyan'},'Top-K: '+settings.topK),
+        pipelineStatus==='done'?React.createElement('span',{className:'badge badge-green'},'● Ready'):null,
+        settings.langflowUrl?React.createElement('span',{className:'badge badge-purple'},'🔗 Langflow'):null,
+        settings.groqApiKey?React.createElement('span',{className:'badge badge-green'},'🔑 Groq'):React.createElement('span',{className:'badge badge-red'},'🔑 Add Key')
+      )
+    ),
+    React.createElement(FlowDiagram,{status:pipelineStatus}),
+    React.createElement('div',{className:'tab-bar'},
+      ['Settings','Upload','Query'].map(t=>{
+        const tid=t.toLowerCase();
+        const open=!results||tid==='upload'||tid==='settings'||(tid==='query'&&(results||q));
+        return React.createElement('button',{key:t,className:'tab'+(open?' active':''),onClick:()=>{if(tid==='upload'){setResults(null);setQ('')}else if(tid==='query'){}}},[
+          {Settings:'⚙️',Upload:'📤',Query:'❓'}[t],' ',t
+        ])
+      })
+    ),
+    // SETTINGS
+    React.createElement('div',{className:'card fade-in'},
+      React.createElement('div',{className:'card-header'},
+        React.createElement('div',{className:'card-header-icon ci-purple'},'⚙️'),
+        React.createElement('div',null,React.createElement('div',{className:'card-title'},'Configuration'),React.createElement('div',{className:'card-sub'},'API keys & connection settings'))
+      ),
+      React.createElement('div',{className:'grid-2'},
+        React.createElement('div',null,
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'🔑 Groq API Key'),
+            React.createElement('input',{type:'password',value:settings.groqApiKey,onChange:e=>setSettings({...settings,groqApiKey:e.target.value}),placeholder:'gsk_your_groq_key_here'})
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'🔗 Langflow URL'),
+            React.createElement('input',{value:settings.langflowUrl,onChange:e=>setSettings({...settings,langflowUrl:e.target.value}),placeholder:'http://localhost:7860 or https://your-langflow.up.railway.app'})
+          ),
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'🔐 Langflow API Token'),
+            React.createElement('input',{type:'password',value:settings.langflowToken,onChange:e=>setSettings({...settings,langflowToken:e.target.value}),placeholder:'sk-...'})
+          )
+        ),
+        React.createElement('div',null,
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'📊 Top-K Results (1-50)'),
+            React.createElement('input',{type:'number',value:settings.topK,min:1,max:50,onChange:e=>setSettings({...settings,topK:parseInt(e.target.value)||10})})
+          ),
+          React.createElement('button',{className:'btn btn-outline',onClick:cc,disabled:testingConn,style:{width:'100%',marginTop:4}},
+            testingConn?React.createElement(React.Fragment,null,React.createElement('span',{className:'spinner'}),' Testing Connection...'):
+            '🔄 Test Langflow Connection'
+          ),
+          React.createElement('div',{style:{marginTop:16,padding:12,background:'var(--bg)',borderRadius:8,border:'1px solid var(--border)'}},
+            React.createElement('div',{className:'section-label',style:{marginBottom:8}},'Saved Config'),
+            Object.entries(settings).map(([k,v])=>React.createElement('div',{className:'settings-row',key:k},
+              React.createElement('span',{className:'settings-key'},k.replace(/([A-Z])/g,' $1').replace(/^./,c=>c.toUpperCase())),
+              React.createElement('span',{className:'settings-val'},k.includes('Key')||k.includes('Token')?(v?'••••••••':'Not set'):(v||'Not set'))
+            ))
+          )
+        )
+      ),
+      React.createElement('div',{style:{marginTop:12,fontSize:10,color:'var(--muted)',textAlign:'right'}},'💾 Auto-saved to browser storage')
+    ),
+    // UPLOAD
+    React.createElement('div',{className:'card fade-in'},
+      React.createElement('div',{className:'card-header'},
+        React.createElement('div',{className:'card-header-icon ci-green'},'📤'),
+        React.createElement('div',null,React.createElement('div',{className:'card-title'},'Upload & Ingest Document'),React.createElement('div',{className:'card-sub'},'CSV, PDF, TXT, JSON, Markdown'))
+      ),
+      React.createElement('div',{className:'grid-2'},
+        React.createElement('div',null,
+          React.createElement('div',{className:'form-group'},
+            React.createElement('label',null,'Select File'),
+            React.createElement('input',{type:'file',accept:'.csv,.pdf,.txt,.json,.md,.xlsx',ref:fileRef,onChange:e=>{const fl=e.target.files[0];setF(fl);setFn(fl?.name||'');setPipelineStatus('idle')}})
+          ),
+          React.createElement('button',{className:'btn',onClick:hu,disabled:!f||loading},
+            loading?React.createElement(React.Fragment,null,React.createElement('span',{className:'spinner'}),' Processing...'):
+            '⚡ Upload & Ingest'
+          )
+        ),
+        React.createElement('div',null,
+          React.createElement('div',{style:{padding:16,background:'var(--bg)',borderRadius:8,border:'1px solid var(--border)'}},
+            React.createElement('div',{className:'section-label',style:{marginBottom:10}},'File Details'),
+            React.createElement('div',{className:'settings-row'},React.createElement('span',{className:'settings-key'},'Name'),React.createElement('span',{className:'settings-val'},fn||'—')),
+            React.createElement('div',{className:'settings-row'},React.createElement('span',{className:'settings-key'},'Size'),React.createElement('span',{className:'settings-val'},f?(f.size/1024).toFixed(1)+' KB':'—')),
+            React.createElement('div',{className:'settings-row'},React.createElement('span',{className:'settings-key'},'Pipeline'),React.createElement('span',{className:'settings-val',style:{color:pipelineStatus==='done'?'var(--green)':'var(--muted)'}},pipelineStatus==='done'?'✅ Ready':'⏳ Idle'))
+          )
+        )
+      )
+    ),
+    // QUERY
+    React.createElement('div',{className:'card fade-in'},
+      React.createElement('div',{className:'card-header'},
+        React.createElement('div',{className:'card-header-icon ci-cyan'},'❓'),
+        React.createElement('div',null,React.createElement('div',{className:'card-title'},'Ask a Question'),React.createElement('div',{className:'card-sub'},'Natural language search against your document'))
+      ),
+      React.createElement('div',{className:'form-group'},
+        React.createElement('textarea',{value:q,onChange:e=>setQ(e.target.value),placeholder:'e.g., "Find all test cases related to login functionality with priority High" or "Show me performance test cases for the checkout flow"',
+          onKeyDown:e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();hq()}}})
+      ),
+      React.createElement('div',{style:{display:'flex',gap:10}},
+        React.createElement('button',{className:'btn',onClick:hq,disabled:loading||!q.trim()},
+          loading?React.createElement(React.Fragment,null,React.createElement('span',{className:'spinner'}),' Searching...'):
+          '🔍 Search Document'
+        ),
+        React.createElement('button',{className:'btn btn-outline btn-sm',onClick:()=>{setQ('');setResults(null)}},'✕ Clear'),
+        settings.groqApiKey?null:React.createElement('span',{style:{fontSize:11,color:'var(--amber)',alignSelf:'center',marginLeft:8}},'⚠️ Add Groq API key in Settings first')
+      )
+    ),
+    // RESULTS
+    results&&React.createElement(React.Fragment,null,
+      results.answer&&React.createElement('div',{className:'answer-card fade-in',key:'answer'},
+        React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,marginBottom:14}},
+          React.createElement('span',{style:{fontSize:20}},'🤖'),
+          React.createElement('div',null,
+            React.createElement('div',{style:{fontWeight:600,fontSize:13}},'AI-Generated Answer'),
+            React.createElement('div',{style:{fontSize:10,color:'var(--muted)'}},results.model||'Groq LLM')
+          )
+        ),
+        React.createElement('div',{className:'answer-body'},results.answer)
+      ),
+      results.chunks&&results.chunks.length>0&&React.createElement('div',{className:'card fade-in',key:'chunks'},
+        React.createElement('div',{className:'card-header'},
+          React.createElement('div',{className:'card-header-icon ci-green'},'📊'),
+          React.createElement('div',null,React.createElement('div',{className:'card-title'},'Retrieved Chunks ('+results.chunks.length+')'))
+        ),
+        React.createElement('div',{style:{maxHeight:'65vh',overflowY:'auto',paddingRight:4}},results.chunks.map((c,i)=>React.createElement('div',{className:'chunk-item',key:c.id||i},
+          React.createElement('div',{className:'chunk-header'},
+            React.createElement('span',{className:'chunk-rank'},'#'+(i+1)),
+            React.createElement('span',{className:'chunk-relevance '+(c.relevance_score>70?'cr-high':c.relevance_score>40?'cr-med':'cr-low')},c.relevance_score+'% match'),
+            React.createElement('span',{className:'chunk-id'},c.id||'chunk-'+(i+1))
+          ),
+          React.createElement('div',{className:'chunk-text'},c.text?.slice(0,500)+(c.text?.length>500?'...':''))
+        )))
+      )
+    ),
+    toast&&React.createElement('div',{className:'toast toast-'+(toast.type==='error'?'error':'success'),key:'toast'},toast.msg)
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
