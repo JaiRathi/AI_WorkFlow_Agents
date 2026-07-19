@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "buildCommand": "mkdir -p vercel-static && cp architecture.html vercel-static/index.html && cp architecture.png vercel-static/",
+  "outputDirectory": "vercel-static",
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

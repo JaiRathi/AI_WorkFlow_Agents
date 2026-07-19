@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QABuddy.ai — Architecture &amp; Implementation</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --purple: #c084fc;
+    --red: #f87171;
+    --pink: #f472b6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+  }
+  h1 { font-size: 2.2rem; font-weight: 800; margin-bottom: 0.25rem; background: linear-gradient(135deg, var(--accent), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { color: var(--muted); font-size: 1rem; margin-bottom: 2.5rem; }
+  h2 { font-size: 1.5rem; font-weight: 700; margin: 2.5rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); color: var(--accent); }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--green); }
+  p { margin: 0.75rem 0; color: var(--muted); }
+  strong { color: var(--text); }
+  ul, ol { margin: 0.75rem 0 0.75rem 1.5rem; color: var(--muted); }
+  li { margin: 0.35rem 0; }
+  li strong { color: var(--accent); }
+
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--text);
+  }
+  .arch-diagram .layer { color: var(--purple); font-weight: 700; }
+  .arch-diagram .comp { color: var(--accent); }
+  .arch-diagram .db { color: var(--amber); }
+  .arch-diagram .arrow { color: var(--muted); }
+  .arch-diagram .label { color: var(--green); }
+
+  .tech-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin: 1rem 0;
+  }
+  .tech-card h4 { color: var(--accent); font-size: 1.05rem; margin-bottom: 0.5rem; }
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  th, td {
+    padding: 0.65rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th { color: var(--accent); font-weight: 600; }
+  td { color: var(--muted); }
+  td strong { color: var(--text); }
+  code {
+    background: var(--surface);
+    padding: 0.15em 0.4em;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.85em;
+    color: var(--green);
+  }
+  .callout {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1rem 0;
+    color: var(--text);
+  }
+  .phase-badge {
+    display: inline-block;
+    padding: 0.2em 0.7em;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+  }
+  .phase-1 { background: rgba(74, 222, 128, 0.15); color: var(--green); }
+  .phase-2 { background: rgba(192, 132, 252, 0.15); color: var(--purple); }
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>QABuddy.ai</h1>
+<p class="subtitle">Advanced Hybrid RAG for QA Engineers — Architecture &amp; Implementation Guide</p>
+
+<div class="callout">
+  Self-hosted, multi-source <strong>Retrieval-Augmented Generation</strong> system that gives QA engineers
+  <strong>cited, grounded answers</strong> from your Selenium framework, Playwright framework, test cases,
+  JIRA tickets, PRDs, and operational logs — all running 24×7 on your own infrastructure.
+</div>
+
+<h2>1. Architecture Overview</h2>
+
+<div class="arch-diagram">
+<span class="layer">┌───────────────────────────────────────────────────────────────────────────────────┐</span>
+<span class="layer">│                              DIGITALOCEAN DROPLET / VPS                          │</span>
+<span class="layer">│                                                                                   │</span>
+<span class="layer">│</span>  <span class="comp">┌─────────────────────┐</span>    <span class="db">┌──────────────────────────┐</span>    <span class="comp">┌────────────────────┐</span>     <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│    Streamlit App    │</span>    <span class="db">│        Qdrant DB         │</span>    <span class="comp">│   Background Sync  │</span>     <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│     Port :8501      │</span>    <span class="db">│  Port :6333 (HTTP/gRPC)  │</span>    <span class="comp">│  (Phase 2 — cron)  │</span>     <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  Chat UI + History  │</span>    <span class="db">│  Hybrid: Dense + Sparse  │</span>    <span class="comp">│  Repo polling      │</span>     <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">└────────┬────────────┘</span>    <span class="db">└────────────┬─────────────┘</span>    <span class="comp">│  File watching     │</span>     <span class="layer">│</span>
+<span class="layer">│</span>         <span class="arrow">│</span>                        <span class="arrow">▲</span>  <span class="arrow">│</span>                        <span class="comp">│  JIRA polling      │</span>     <span class="layer">│</span>
+<span class="layer">│</span>         <span class="arrow">│  HTTP REST</span>              <span class="arrow">│</span>  <span class="arrow">│</span>  <span class="label">gRPC / HTTP</span>           <span class="comp">└────────────────────┘</span>     <span class="layer">│</span>
+<span class="layer">│</span>         <span class="arrow">▼</span>                        <span class="arrow">│</span>  <span class="arrow">▼</span>                                       <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">┌─────────────────────┐</span>    <span class="arrow">│</span>  <span class="comp">┌───────────────────────┐</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│   FastAPI Server    │</span>    <span class="arrow">│</span>  <span class="comp">│   Ingestion Pipeline   │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│    Port :8000       │</span>    <span class="arrow">│</span>  <span class="comp">│                        │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│                     │</span>    <span class="arrow">│</span>  <span class="comp">│  Parse → Clean → Chunk │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  GET  /health       │</span>    <span class="arrow">│</span>  <span class="comp">│  → Embed → Index       │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  POST /api/ask      │</span>    <span class="arrow">│</span>  <span class="comp">│                        │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  POST /api/ingest   │</span>    <span class="arrow">│</span>  <span class="comp">│  ┌────────┐ ┌────────┐ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  POST /api/ingest/  │</span>    <span class="arrow">│</span>  <span class="comp">│  │Parsers │ │Chunkers│ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│       jira          │</span>    <span class="arrow">│</span>  <span class="comp">│  │.py     │ │per-type│ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  GET  /api/stats    │</span>    <span class="arrow">│</span>  <span class="comp">│  │.md     │ │strategy│ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│                     │</span>    <span class="arrow">│</span>  <span class="comp">│  │.csv    │ └────────┘ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  HybridRetriever    │</span>    <span class="arrow">│</span>  <span class="comp">│  │.pdf    │ ┌────────┐ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  ┌─ Dense (Cosine)  │</span>    <span class="arrow">│</span>  <span class="comp">│  │.log    │ │Cleaner │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  ├─ Sparse (BM25)   │</span>    <span class="arrow">│</span>  <span class="comp">│  └────────┘ │norm.   │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  ├─ RRF Fusion      │</span>    <span class="arrow">│</span>  <span class="comp">│            └────────┘ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  ├─ Re-rank (opt)   │</span>    <span class="arrow">│</span>  <span class="comp">│  ┌──────────────────┐ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">│  └─ LLM Generate    │</span>    <span class="arrow">│</span>  <span class="comp">│  │ BGE-base-en-v1.5 │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>  <span class="comp">└─────────────────────┘</span>    <span class="arrow">│</span>  <span class="comp">│  │ 768-dim embed    │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">│  └──────────────────┘ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">│  ┌──────────────────┐ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">│  │ JIRA MCP Connect │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">│  │ Live JQL → fetch │ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">│  └──────────────────┘ │</span>               <span class="layer">│</span>
+<span class="layer">│</span>                            <span class="arrow">│</span>  <span class="comp">└───────────────────────┘</span>               <span class="layer">│</span>
+<span class="layer">│                                                                                   │</span>
+<span class="layer">│</span>  <span class="comp">┌──────────────────────────────────────────────────────────────────────────────┐</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│                         DATA LAYER  (10 Sources)                               │</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────────┐  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │ Selenium │ │Playwright│ │Test Cases│ │  JIRA    │ │  Company Docs    │  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │  Repo    │ │  Repo    │ │  CSV/XLSX│ │  Live +  │ │  PDF / MD        │  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  └──────────┘ └──────────┘ └──────────┘ │  Export  │ └──────────────────┘  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  ┌──────────┐ ┌──────────┐ ┌──────────┐ └──────────┘ ┌──────────────────┐  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │ Transcript│ │  Lucid   │ │  PRD/SRS │              │ Jenkins Logs     │  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │  VTT/SRT │ │Exports   │ │BRD/FRD   │              │ .log / .txt      │  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  └──────────┘ └──────────┘ └──────────┘              └──────────────────┘  </span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  ┌──────────┐  ← Phase 2                                                       │</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │  Figma   │</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  │ Exports  │</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">│  └──────────┘  ← Phase 2                                                       │</span><span class="layer">  │</span>
+<span class="layer">│</span>  <span class="comp">└──────────────────────────────────────────────────────────────────────────────┘</span><span class="layer">  │</span>
+<span class="layer">└───────────────────────────────────────────────────────────────────────────────────┘</span>
+</div>
+
+<p><strong>Data flow:</strong> <code>data/</code> folders → <strong>Ingestion Pipeline</strong> (parse → clean → chunk → embed) → <strong>Qdrant</strong> (dense + sparse index) → <strong>FastAPI</strong> → <strong>Streamlit</strong> (user query → hybrid search → LLM → cited answer)</p>
+
+<h2>2. Technology Stack &amp; Decisions</h2>
+
+<div class="tech-grid">
+  <div class="tech-card">
+    <h4>🔤 Embedding Model</h4>
+    <strong>BAAI/bge-base-en-v1.5</strong><br>
+    <span style="color:var(--muted)">768-dimensional embeddings. #1 on MTEB retrieval benchmark for open-source models. Handles both code and natural language. Runs on CPU (~1–2 sec per chunk batch of 32). MIT license.</span>
+  </div>
+  <div class="tech-card">
+    <h4>🗄️ Vector Database</h4>
+    <strong>Qdrant (Rust, Apache 2.0)</strong><br>
+    <span style="color:var(--muted)">Only open-source vector DB with native hybrid search (dense vectors + BM25 sparse in a single query). Single binary deployment. 200MB RAM baseline. Collection-level isolation per source.</span>
+  </div>
+  <div class="tech-card">
+    <h4>⚙️ Backend</h4>
+    <strong>FastAPI (Python)</strong><br>
+    <span style="color:var(--muted)">Async, production-grade API with auto-generated OpenAPI docs at <code>/docs</code>. Handles /ask, /ingest, /health endpoints with Pydantic validation. CORS-enabled for frontend.</span>
+  </div>
+  <div class="tech-card">
+    <h4>🖥️ Frontend</h4>
+    <strong>Streamlit</strong><br>
+    <span style="color:var(--muted)">Chat UI with message history, source expanders showing citations, index stats dashboard, and source filter controls. Python-only — zero JavaScript code.</span>
+  </div>
+  <div class="tech-card">
+    <h4>🧠 LLM Generation</h4>
+    <strong>Multi-provider: OpenAI / Anthropic / Ollama</strong><br>
+    <span style="color:var(--muted)">GPT-4o, Claude, or fully local Llama3 via Ollama. System prompt forces citation usage and prevents hallucination. ~3,000 tokens/query (context + question).</span>
+  </div>
+  <div class="tech-card">
+    <h4>🎫 JIRA Integration</h4>
+    <strong>atlassian-python-api (Cloud)</strong><br>
+    <span style="color:var(--muted)">JQL → paginated fetch → strip markup → chunk as prose. Stores <code>jira_key</code>, <code>status</code>, <code>assignee</code>, <code>labels</code> as filterable metadata in Qdrant payload.</span>
+  </div>
+</div>
+
+<h2>3. Chunking Strategy (Per Source Type)</h2>
+
+<table>
+<tr><th>Source Type</th><th>Parser</th><th>Chunk Size</th><th>Overlap</th><th>Method</th></tr>
+<tr><td><strong>Code</strong> (.py, .ts, .java)</td><td><code>CodeParser</code> — AST-aware for Python, regex for others</td><td>600 tokens</td><td>100</td><td>Split at function/class/method boundaries. Never cuts mid-function. Falls back to RecursiveCharacterTextSplitter with language-specific separators.</td></tr>
+<tr><td><strong>Test Cases</strong> (CSV/XLSX)</td><td><code>SpreadsheetParser</code> — csv.DictReader + pandas ExcelFile</td><td>1 row = 1 chunk</td><td>0</td><td>Each row becomes a document. All columns formatted as <code>key: value</code> pairs. Metadata: test_id, module, priority.</td></tr>
+<tr><td><strong>JIRA Tickets</strong></td><td><code>JiraConnector</code> — Live JQL fetch or JSON file</td><td>500 tokens</td><td>50</td><td>Summary + description + comments concatenated. Strips Atlassian markup. Stored as prose with rich metadata payload.</td></tr>
+<tr><td><strong>PDFs / PRDs / BRDs</strong></td><td><code>PdfParser</code> — PyPDF2 page extraction + python-docx</td><td>500 tokens</td><td>50</td><td>RecursiveCharacterTextSplitter with <code>\n\n</code> → <code>\n</code> → <code>. </code> separators. Page number preserved in payload.</td></tr>
+<tr><td><strong>Meeting Transcripts</strong></td><td><code>TranscriptParser</code> — .txt, .vtt, .srt, .md</td><td>800 tokens</td><td>100</td><td>VTT/SRT: strips timestamps, joins dialogue. Larger sliding window preserves conversational context across turns.</td></tr>
+<tr><td><strong>Company Docs</strong> (.md)</td><td><code>TranscriptParser</code></td><td>500 tokens</td><td>50</td><td>Split by <code>##</code> and <code>###</code> headings, then by paragraph. Preserves document structure.</td></tr>
+<tr><td><strong>Jenkins Logs</strong></td><td><code>LogParser</code> — timestamp/error-stack aware</td><td>300 tokens</td><td>0</td><td>Split at timestamp boundaries, ERROR/WARN/FAIL markers, or section delimiters (<code>====</code>). ANSI escape codes stripped.</td></tr>
+<tr><td><strong>Lucid Charts</strong></td><td><code>TranscriptParser</code></td><td>300 tokens</td><td>0</td><td>Each exported text block = 1 chunk. No overlap needed for discrete diagram data.</td></tr>
+</table>
+
+<h2>4. Hybrid Retrieval Pipeline</h2>
+
+<ol>
+  <li><strong>Query embedding</strong> — User question → BGE-base-en-v1.5 → 768-dim dense vector</li>
+  <li><strong>Dense search</strong> — Cosine similarity across all collections. Top-k results scored.</li>
+  <li><strong>Parallel sparse search</strong> — BM25 keyword match (via Qdrant native <code>fastembed</code>) across same collections for exact term hits (function names, JIRA IDs, error codes).</li>
+  <li><strong>Reciprocal Rank Fusion (RRF)</strong> — Merges dense and sparse result sets with configurable weighting (default: 60% dense / 40% sparse). Eliminates duplicates and re-ranks.</li>
+  <li><strong>Optional re-rank</strong> — <code>BGE-reranker-base</code> cross-encoder refines top-20 → top-5 for maximum precision (off by default to save compute).</li>
+  <li><strong>Context assembly</strong> — Top-k chunks formatted with <code>--- Source [filename::symbol](Lx-Ly) ---</code> headers.</li>
+  <li><strong>LLM generation</strong> — System prompt enforces citations and prevents hallucination. Answer returned with structured source list.</li>
+</ol>
+
+<h2>5. API Endpoints</h2>
+
+<table>
+<tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr>
+<tr><td><code>GET</code></td><td><code>/health</code></td><td>Health check — Qdrant connectivity, embedding model, LLM provider, per-collection doc counts</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/ask</code></td><td><strong>Main QA endpoint.</strong> Body: <code>{query, top_k, source_filter}</code>. Returns: <code>{answer, sources[], source_count}</code></td></tr>
+<tr><td><code>POST</code></td><td><code>/api/ingest</code></td><td>Trigger full ingestion. Body: <code>{sources: ["selenium", "jira", ...]}</code> or omit for all 10</td></tr>
+<tr><td><code>POST</code></td><td><code>/api/ingest/jira</code></td><td>Live JIRA fetch + index. Body: <code>{jql, max_results}</code></td></tr>
+<tr><td><code>GET</code></td><td><code>/api/stats</code></td><td>Per-collection document counts in Qdrant</td></tr>
+</table>
+
+<h2>6. Folder Structure</h2>
+
+<div class="arch-diagram">
+Hybrid_RAG_QA_Buddy/
+├── data/                              ← Data dropped here by you
+│   ├── 01_selenium_framework/         ← Clone of Selenium repo
+│   ├── 02_playwright_framework/       ← Clone of Playwright repo
+│   ├── 03_test_cases/                 ← *.csv, *.xlsx
+│   ├── 04_jira_tickets/               ← JSON export or live-only
+│   ├── 05_company_docs/               ← *.pdf, *.md
+│   ├── 06_figma_exports/              ← Phase 2
+│   ├── 07_meeting_transcripts/        ← *.txt, *.vtt, *.srt
+│   ├── 08_lucid_charts/               ← Exported text
+│   ├── 09_prd_srs_brd_frd/            ← *.pdf, *.docx
+│   └── 10_jenkins_logs/               ← *.log, *.txt
+├── src/
+│   ├── ingestion/
+│   │   ├── parsers/                   ← code, spreadsheet, pdf, transcript, log
+│   │   ├── chunkers/chunker.py        ← Per-type chunking logic
+│   │   ├── cleaners.py                ← Text normalization + metadata
+│   │   ├── embedder.py                ← BGE model wrapper
+│   │   └── orchestrator.py            ← End-to-end ingestion pipeline
+│   ├── retrieval/
+│   │   ├── qdrant_client.py           ← Connection, collections, upsert
+│   │   └── hybrid_search.py           ← Dense + Sparse + RRF + LLM
+│   ├── connectors/
+│   │   └── jira_mcp.py                ← JIRA Cloud connector
+│   ├── api/
+│   │   ├── main.py                    ← FastAPI app
+│   │   ├── schemas.py                 ← Pydantic request/response models
+│   │   └── routes/                    ← ask, ingest, health endpoints
+│   └── frontend/
+│       └── app.py                     ← Streamlit chat UI
+├── config/
+│   ├── settings.py                    ← All configuration dataclasses
+│   └── .env.example                   ← Environment variables template
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml             ← 3 containers: API + Qdrant + Streamlit
+├── qdrant_storage/                    ← Persistent Qdrant data (mounted volume)
+├── requirements.txt
+├── Makefile
+└── README.md
+</div>
+
+<h2>7. Deployment</h2>
+
+<div class="callout">
+  <strong>Single DigitalOcean droplet, 3 Docker containers:</strong><br>
+  <code>docker compose up -d</code> → FastAPI :8000, Qdrant :6333, Streamlit :8501<br>
+  Recommended: <strong>4 GB RAM / 2 vCPU</strong> droplet (~$24/month)<br>
+  Qdrant storage volume-mounted to <code>./qdrant_storage</code> for persistence across restarts.
+</div>
+
+<h2>8. Token Efficiency</h2>
+
+<p>
+For a typical query: Qdrant returns <strong>top-5 chunks</strong> (~500 tokens each) = ~2,500 tokens context.
+Add the system prompt + user question = <strong>~3,000 tokens total per query</strong>.
+No entire documents are ever sent to the LLM. At GPT-4o pricing (~$2.50/1M input tokens, ~$10/1M output),
+each query costs <strong>~$0.007</strong>. With Ollama + local Llama3, the cost is <strong>$0</strong>.
+</p>
+
+<h2>9. Phase 2 Roadmap <span class="phase-badge phase-2">Planned</span></h2>
+<ul>
+  <li><strong>Hourly auto-ingestion:</strong> Cron job watches <code>data/</code> directories for new/modified files, detects git commits in framework repos, polls JIRA for new tickets — re-indexes delta only</li>
+  <li><strong>Figma ingestion:</strong> Export ER diagrams, user guides, wireframes as images; use vision-capable LLM to describe and index as text chunks</li>
+</ul>
+
+<h2>10. Implementation Summary</h2>
+
+<div class="tech-grid">
+  <div class="tech-card">
+    <h4>Phase 1 Status: <span class="phase-badge phase-1">Complete</span></h4>
+    <ul>
+      <li>10-source folder structure created</li>
+      <li>5 specialized parsers (code, spreadsheet, PDF, transcript, log)</li>
+      <li>Source-type-aware chunker with 8 distinct strategies</li>
+      <li>Text cleaner with ANSI stripping + QA terminology normalization</li>
+      <li>BGE-base-en-v1.5 embedder with batch encoding</li>
+      <li>Qdrant manager with per-source collections + sparse vector config</li>
+      <li>Hybrid retriever: dense + sparse + RRF fusion + optional reranker</li>
+      <li>Citation builder with source-aware formatting</li>
+      <li>Multi-LLM generator (OpenAI, Anthropic, Ollama)</li>
+      <li>JIRA connector: live JQL fetch, markup stripping, metadata extraction</li>
+      <li>FastAPI server: 5 endpoints with Pydantic validation</li>
+      <li>Streamlit chat frontend: history, filters, source expanders, stats</li>
+      <li>Docker Compose: 3-container deployment</li>
+      <li>Orchestrator: end-to-end ingestion pipeline</li>
+    </ul>
+  </div>
+  <div class="tech-card">
+    <h4>Key Design Decisions</h4>
+    <ul>
+      <li><strong>Why Qdrant over Chroma/Weaviate/Milvus:</strong> Native hybrid search in a single query — no separate BM25 index. Single Go binary, Apache 2.0.</li>
+      <li><strong>Why BGE over all-MiniLM:</strong> Higher MTEB retrieval score (63.3 vs 58.9), 768-dim gives better semantic resolution for code + prose mixing.</li>
+      <li><strong>Why AST-aware code chunking:</strong> Ensures complete function/class units. Never splits a method signature from its body.</li>
+      <li><strong>Why per-source collections:</strong> Enables source-type filtering at query time, per-collection stats, and independent re-indexing without affecting other sources.</li>
+      <li><strong>Why 60/40 dense/sparse weighting:</strong> Semantic meaning dominates for QA questions, but keyword match catches exact JIRA keys, function names, and error codes.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  <strong>QABuddy.ai</strong> — Built for QA engineers. Self-hosted. Open-source stack. Token-efficient.<br>
+  Backend: FastAPI · Vector DB: Qdrant · Embeddings: BGE-base-en-v1.5 · Frontend: Streamlit · LLM: Your choice.
+</footer>
+
+</body>
+</html>
