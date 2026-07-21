@@ -1,6 +1,7 @@
 {
+  "name": "qabuddyai",
   "version": 2,
-  "buildCommand": "mkdir -p vercel-static && cp architecture.html vercel-static/index.html && cp architecture.png vercel-static/",
+  "buildCommand": "mkdir -p vercel-static && cp index.html index.css app.js architecture.html architecture.png vercel-static/",
   "outputDirectory": "vercel-static",
   "framework": null,
   "rewrites": [

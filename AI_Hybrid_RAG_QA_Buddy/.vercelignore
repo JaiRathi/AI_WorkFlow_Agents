@@ -13,6 +13,5 @@ README.md
 *.py
 *.pyc
 generate_diagram.py
-.vercelignore
 .dockerignore
 .commandcode
